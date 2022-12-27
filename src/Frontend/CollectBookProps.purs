@@ -4,6 +4,7 @@ import Prelude
 
 import Affjax.ResponseFormat as RF
 import Affjax.Web as AJ
+import Common.BookProps (ISBN, BookProps)
 import Control.Monad.Except (ExceptT(..), lift, runExceptT, withExceptT)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Data.Array (foldM, foldl, (:))
@@ -20,14 +21,15 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
 import Frontend.Constants (tokatFirstPageURL, tokatHomeURL)
-import Web.DOM (Element, Node, NodeList)
+import Frontend.UI.UIUtils (selectElementsBy, selectNodesBy)
+import Web.DOM (Element, Node)
 import Web.DOM.DOMParser (makeDOMParser, parseHTMLFromString)
 import Web.DOM.Document as Document
 import Web.DOM.Element as Element
 import Web.DOM.HTMLCollection as HTMLCollection
 import Web.DOM.Node as Node
 import Web.DOM.NodeList as NodeList
-import Web.DOM.ParentNode (QuerySelector(..), querySelector, querySelectorAll)
+import Web.DOM.ParentNode (QuerySelector(..), querySelector)
 import Web.DOM.ParentNode as ParentNode
 import Web.HTML (window)
 import Web.HTML.HTMLDocument as HTMLDocument
@@ -38,14 +40,6 @@ import Web.HTML.HTMLTableRowElement as HTMLTableRowElement
 import Web.HTML.Window (document)
 import Web.URL as URL
 import Web.URL.URLSearchParams as URLSearchParams
-import Frontend.UI.UIUtils (selectElementsBy, selectNodesBy)
-
-type ISBN = String
-type BookPropName = String
-type BookPropValue = String
-type BookPropValues = Array String
-
-type BookProps = Map BookPropName BookPropValues
 
 collectBookProperties :: ISBN -> Aff (Either String (BookProps))
 collectBookProperties isbn = runExceptT do

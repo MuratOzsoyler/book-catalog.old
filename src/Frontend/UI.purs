@@ -2,7 +2,7 @@ module Frontend.UI where
 
 import Prelude
 
-import Control.Plus (class Plus)
+import Common.BookProps (BookProps)
 import Data.Array (foldl, notElem)
 import Data.Filterable (filter)
 import Data.Foldable (any)
@@ -14,20 +14,18 @@ import Data.String (fromCodePointArray, length, toCodePointArray, toLower)
 import Data.String as String
 import Data.Tuple (Tuple(..), fst)
 import Data.Tuple.Nested ((/\))
-import Debug (spyWith)
-import Deku.Attribute (Attribute, cb, (!:=))
+import Deku.Attribute (cb, (!:=))
 import Deku.Attributes (klass_)
 import Deku.Control (blank, text_, (<#~>))
 import Deku.Core (Domable)
 import Deku.DOM as D
 import Deku.Do as Deku
-import Deku.Hooks (useHot, useState)
+import Deku.Hooks (useHot)
 import Deku.Listeners (click, textInput_)
 import Effect.Aff (joinFiber, launchAff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
-import FRP.Event.Class ((<*|>))
-import Frontend.BookProps (BookProps, collectBookProperties)
+import Frontend.BookProps (collectBookProperties)
 import Frontend.BookPropsInput (bookPropsInputScene)
 import Frontend.UI.UIUtils (disabled, errorPanel, infoPanel, sameIdAndName, value)
 import Network.RemoteData (RemoteData(..), fromEither)

@@ -38,3 +38,22 @@ in  upstream
     , repo = "https://github.com/mikesol/purescript-deku.git"
     , version = "v0.9.9"
     }
+  with csv = {
+    dependencies =
+      [ "arrays"
+      , "control"
+      , "effect"
+      , "either"
+      , "foldable-traversable"
+      , "lists"
+      , "maybe"
+      , "ordered-collections"
+      , "parsing"
+      , "prelude"
+      , "strings"
+      , "test-unit"
+      ]
+    , repo = "https://github.com/jsparkes/purescript-csv.git"
+    , version = "master"
+    }
+

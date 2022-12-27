@@ -1,10 +1,15 @@
 module Backend.Main where
 
-import Prelude hiding ((/))
+import Prelude
 
 import Affjax.Node (URL, get, printError)
 import Affjax.ResponseFormat as RF
 import Affjax.StatusCode (StatusCode(..))
+import Backend.BookOperations (addBook, getBook)
+import Common.BookProps (BookProps)
+import Control.Monad.Except (except, runExceptT, withExceptT)
+import Data.Argonaut.Decode (fromJsonString, printJsonDecodeError)
+import Data.Argonaut.Encode (toJsonString)
 import Data.Array (elem)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
@@ -12,11 +17,11 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Data.Profunctor (dimap)
 import Data.String (Pattern(..), joinWith, split)
-import Debug (traceM)
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
-import HTTPurple (Request, ResponseM, ServerM, as, header, int, internalServerError, mkRoute, noArgs, notFound, ok, ok', response, rest, serve, string, (/), (?))
+import Effect.Ref as Ref
+import HTTPurple (Method(..), Request, ResponseM, ServerM, as, badRequest, created, expectationFailed, header, int, internalServerError, mkRoute, noArgs, notFound, notImplemented, ok, ok', response, rest, segment, serve, string, (!!), (!?), (!@), (/), (?))
 import HTTPurple.Headers (ResponseHeaders)
 import HTTPurple.Status (misdirectedRequest)
 import Node.FS.Aff (readFile)
@@ -24,6 +29,7 @@ import Node.Path (FilePath, concat, extname)
 import Node.Process (cwd)
 import Node.URL (Query, format, parse, toQueryString)
 import Partial.Unsafe (unsafeCrashWith)
+import Prelude (Unit, bind, discard, mempty, show, ($), (<$>), (<<<), (<>), (=<<), (==), (>>=))
 import Routing.Duplex (RouteDuplex')
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -48,6 +54,11 @@ data Route
       , ts :: Int -- ts
       , page :: Int -- page
       }
+  | AddBook String
+  | DeleteBook String
+  | UpdateBook String
+  | GetBook String
+  | GetBooks
 
 derive instance Generic Route _
 
@@ -93,6 +104,11 @@ route = mkRoute
       , ts: int
       , page: int
       }
+  , "AddBook": "book" / string segment
+  , "DeleteBook": "book" / string segment
+  , "UpdateBook": "book" / string segment
+  , "GetBook": "book" / string segment
+  , "GetBooks": "books" / noArgs
   }
 
 assetsPath = "assets" :: URL
@@ -112,8 +128,9 @@ main = serve { port: 8080, onStarted } { route, router }
   onStarted = Console.log "*** Book Catalog server started on http://127.0.0.1:8080 ***"
 
   router :: Request Route -> ResponseM
+  router { route: _, headers } | Just _ <- headers !! "expect" = expectationFailed
   router { route: Home } =
-    liftEffect (Console.log "log Home") *> traceM "Home" *> readFile homePagePath >>= ok' htmlResponseHeader
+    readFile homePagePath >>= ok' htmlResponseHeader
   router { route: Asset asst, url } = case asst of
     PrimaryAsset name
       | ext <- extname name, isExtValid ext -> sendAsset [ "./", assetsFilePath ] name ext
@@ -164,6 +181,25 @@ main = serve { port: 8080, onStarted } { route, router }
         , page: show page
         }
     getTokatPage $ prepTokatURL qry
+  router { route: GetBook isbn, method: Get } = do
+    book <- runExceptT $ getBook isbn
+    case book of
+      Left err -> response 404 err
+      Right props -> ok $ toJsonString props
+  router { route: UpdateBook isbn, method: Put } = notImplemented -- 204 nocontent, 415 unsupportedMediaType Content-Range 400 badRequest
+  router { route: DeleteBook isbn, method: Delete } = notImplemented -- 204 noContent
+  router { route: AddBook isbn, method: Post, body } = do -- 201 created & Location:isbn
+    mbReqStr <- liftEffect $ Ref.read body.string
+    case mbReqStr of
+      Nothing -> badRequest "Payload does not exist"
+      Just reqStr -> do
+        result <- runExceptT $ addBook isbn
+          =<< withExceptT printJsonDecodeError (except $ fromJsonString reqStr)
+        case result of
+          Left err -> badRequest err
+          Right _ -> created
+  router { route: GetBooks, method: Post, headers } | mbRng <- headers !! "Range" = notImplemented
+  router _ = badRequest "bad request"
 
 prepTokatURL :: forall r. { | r } -> String
 prepTokatURL rec =
