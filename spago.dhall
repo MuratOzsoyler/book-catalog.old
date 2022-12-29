@@ -20,6 +20,7 @@
   , "filterable"
   , "foldable-traversable"
   , "httpurple"
+  , "httpurple-argonaut"
   , "hyrule"
   , "integers"
   , "lists"
