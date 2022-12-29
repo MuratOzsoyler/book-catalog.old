@@ -3,10 +3,11 @@ module Backend.BookOperations where
 import Prelude
 
 import Common.BookProps (BookProps, bookToProps, propsToBook)
-import Control.Monad.Except (ExceptT, throwError)
+import Control.Monad.Error.Class (try)
+import Control.Monad.Except (ExceptT(..), catchError, except, lift, throwError, withExceptT)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.List (List, (!!))
+import Data.List (List, (!!), (:))
 import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
@@ -16,9 +17,10 @@ import Data.String as String
 import Data.Tuple (Tuple(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (liftEffect)
+import Effect.Console as Console
 import Node.Buffer as Buffer
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff (readFile, writeFile)
+import Node.FS.Aff (readFile, readTextFile, writeFile, writeTextFile)
 import Node.Path (FilePath)
 import Parsing (parseErrorMessage, runParser)
 import Parsing.CSV (makeParsers)
@@ -30,14 +32,10 @@ import Partial.Unsafe (unsafePartial)
 csvFilePath = "./books.csv" :: String
 
 readCsvFile :: forall m. MonadAff m => FilePath -> ExceptT String m String
-readCsvFile filepath = do
-  buf <- liftAff $ readFile filepath
-  liftEffect $ Buffer.toString UTF8 buf
+readCsvFile filepath = withExceptT show $ ExceptT $ liftAff $ try $ readTextFile UTF8 filepath
 
 writeCsvFile :: forall m. MonadAff m => FilePath -> String -> ExceptT String m Unit
-writeCsvFile filepath content = do
-  buf <- liftEffect $ Buffer.fromString content UTF8
-  liftAff $ writeFile filepath buf
+writeCsvFile filepath content = liftAff $ writeTextFile UTF8 filepath content
 
 makeCsvParsers :: CSV.Parsers String
 makeCsvParsers = makeParsers '"' ";" "\n"
@@ -53,7 +51,7 @@ printCsv books =
         header = map (\(Tuple k _) -> wrapWithQuotes k) $ unsafePartial $ fromJust $ Array.head books'
         hdrstr = String.joinWith ";" header
       in
-        hdrstr <> String.joinWith "\n" (map (joinWith ";" <<< map \(Tuple _ v) -> wrapWithQuotes v) books')
+        String.joinWith "\n" $ hdrstr Array.: map (joinWith ";" <<< map \(Tuple _ v) -> wrapWithQuotes v) books'
   where
   encodeStr = String.replaceAll (Pattern "\"") (Replacement "\"\"")
   wrapWithQuotes str = "\"" <> encodeStr str <> "\""
@@ -82,21 +80,45 @@ withCsvFile' filePath f = do
     Left err -> throwError $ parseErrorMessage err
     Right books -> f books
 
+withNewCsvFile
+  :: forall m
+   . MonadAff m
+  => FilePath
+  -> (List (Map String String) -> ExceptT String m (List (Map String String)))
+  -> ExceptT String m Unit
+withNewCsvFile filePath f = do
+  let newBooks = mempty
+  newBooks' <- f newBooks
+  let csvstr' = printCsv newBooks'
+  writeCsvFile filePath csvstr'
+
 findBookIndex ∷ String -> List (Map String String) -> Maybe Int
 findBookIndex isbn books = List.findIndex
   (\m -> fromMaybe false (pure <<< (_ == isbn) =<< Map.lookup "ISBN" m))
   books
 
 addBook ∷ forall m. MonadAff m => String -> BookProps -> ExceptT String m Unit
-addBook isbn props = withCsvFile csvFilePath \books -> do
-  let found = List.any (maybe false (_ == isbn) <<< Map.lookup "ISBN") books
-  if found then
-    throwError "ISBN has been found in data file. Try deleting it first."
-  else do
-    let
-      row = propsToBook isbn props
-      books' = List.snoc books row
-    pure books'
+addBook isbn props =
+  catchError
+    (withCsvFile csvFilePath go)
+    \err -> do
+      let errStr = {- show -}  err
+      liftEffect $ Console.log $ "Caught error: " <> show err
+      if String.contains (Pattern "ENOENT: no such file or directory") errStr then do
+        liftEffect $ Console.log $ "File \"" <> csvFilePath <> "\" could not be founnd. An empty file will be created."
+        withNewCsvFile csvFilePath go
+      else
+        throwError errStr
+  where
+  go books = do
+    let found = List.any (maybe false (_ == isbn) <<< Map.lookup "ISBN") books
+    if found then
+      throwError "ISBN has been found in data file. Try deleting it first."
+    else do
+      let
+        row = propsToBook isbn props
+        books' = List.snoc books row
+      pure books'
 
 deleteBook :: forall m. MonadAff m => String -> ExceptT String m Unit
 deleteBook isbn = withCsvFile csvFilePath \books -> do
