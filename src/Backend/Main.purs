@@ -1,14 +1,13 @@
 module Backend.Main where
 
-import Prelude
+import Prelude hiding ((/))
 
 import Affjax.Node (URL, get, printError)
 import Affjax.ResponseFormat as RF
 import Affjax.StatusCode (StatusCode(..))
-import Backend.BookOperations (addBook, getBook)
+import Backend.BookOperations (addBook, deleteBook, getBook, updateBook)
 import Common.BookProps (BookProps)
-import Control.Monad.Except (except, runExceptT, withExceptT)
-import Data.Argonaut.Decode (fromJsonString, printJsonDecodeError)
+import Control.Monad.Except (runExceptT)
 import Data.Argonaut.Encode (toJsonString)
 import Data.Array (elem)
 import Data.Either (Either(..))
@@ -17,21 +16,23 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
 import Data.Profunctor (dimap)
 import Data.String (Pattern(..), joinWith, split)
+import Data.String as String
 import Effect (Effect)
+import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
-import Effect.Ref as Ref
-import HTTPurple (Method(..), Request, ResponseM, ServerM, as, badRequest, created, expectationFailed, header, int, internalServerError, mkRoute, noArgs, notFound, notImplemented, ok, ok', response, rest, segment, serve, string, (!!), (!?), (!@), (/), (?))
-import HTTPurple.Headers (ResponseHeaders)
+import HTTPurple (Method(..), Request, ResponseM, ServerM, as, badRequest, conflict, created', expectationFailed, fromJson, header, int, internalServerError, mkRoute, noArgs, noContent, notFound, notImplemented, ok, ok', response, rest, segment, serve, string, unsupportedMediaType, usingCont, (!!), (/), (?))
+import HTTPurple.Headers (RequestHeaders(..), ResponseHeaders(..))
+import HTTPurple.Json.Argonaut as Argonaut
 import HTTPurple.Status (misdirectedRequest)
 import Node.FS.Aff (readFile)
 import Node.Path (FilePath, concat, extname)
 import Node.Process (cwd)
 import Node.URL (Query, format, parse, toQueryString)
 import Partial.Unsafe (unsafeCrashWith)
-import Prelude (Unit, bind, discard, mempty, show, ($), (<$>), (<<<), (<>), (=<<), (==), (>>=))
 import Routing.Duplex (RouteDuplex')
 import Unsafe.Coerce (unsafeCoerce)
+import Web.HTML.Event.EventTypes (offline)
 
 data Route
   = Home
@@ -104,9 +105,9 @@ route = mkRoute
       , ts: int
       , page: int
       }
-  , "AddBook": "book" / string segment
-  , "DeleteBook": "book" / string segment
-  , "UpdateBook": "book" / string segment
+  , "AddBook": "book" / "add" / string segment
+  , "DeleteBook": "book" / "delete" / string segment
+  , "UpdateBook": "book" / "update" / string segment
   , "GetBook": "book" / string segment
   , "GetBooks": "books" / noArgs
   }
@@ -181,23 +182,42 @@ main = serve { port: 8080, onStarted } { route, router }
         , page: show page
         }
     getTokatPage $ prepTokatURL qry
-  router { route: GetBook isbn, method: Get } = do
-    book <- runExceptT $ getBook isbn
-    case book of
-      Left err -> response 404 err
-      Right props -> ok $ toJsonString props
-  router { route: UpdateBook isbn, method: Put } = notImplemented -- 204 nocontent, 415 unsupportedMediaType Content-Range 400 badRequest
-  router { route: DeleteBook isbn, method: Delete } = notImplemented -- 204 noContent
-  router { route: AddBook isbn, method: Post, body } = do -- 201 created & Location:isbn
-    mbReqStr <- liftEffect $ Ref.read body.string
-    case mbReqStr of
-      Nothing -> badRequest "Payload does not exist"
-      Just reqStr -> do
-        result <- runExceptT $ addBook isbn
-          =<< withExceptT printJsonDecodeError (except $ fromJsonString reqStr)
-        case result of
-          Left err -> badRequest err
-          Right _ -> created
+  router { route: GetBook isbn, headers, method: Get } = do
+    if (isMimeJson headers "Accept") then unsupportedMediaType
+    else do
+      book <- runExceptT $ getBook isbn
+      case book of
+        Left err -> response 404 err
+        Right props -> ok $ toJsonString props
+  router { route: UpdateBook isbn, body, headers, method: Put } = usingCont do -- 204 nocontent, 415 unsupportedMediaType Content-Range 400 badRequest
+    if isMimeJson headers "Content-Type" then unsupportedMediaType
+    else do
+      props :: BookProps <- fromJson Argonaut.jsonDecoder body
+      result <- runExceptT $ updateBook isbn props
+      case result of
+        Left err ->
+          if Pattern "The book with ISBN " `String.contains` err then
+            response 404 err
+          else internalServerError err
+        Right _ -> noContent
+  router { route: DeleteBook isbn, method: Delete } = do -- 204 noContent
+    result <- runExceptT $ deleteBook isbn
+    case result of
+      Left err ->
+        if Pattern "The book with ISBN " `String.contains` err then
+          response 404 err
+        else internalServerError err
+      Right _ -> noContent
+  router { route: AddBook isbn, headers, method: Post, body } = usingCont
+    if isMimeJson headers "Content-Type" then unsupportedMediaType
+    else do
+      props :: BookProps <- fromJson Argonaut.jsonDecoder body
+      result <- runExceptT $ addBook isbn props
+      case result of
+        Left err
+          | Pattern "ISBN has been found in data file" `String.contains` err -> conflict err
+          | otherwise -> badRequest err
+        Right _ -> created' $ header "Location" isbn
   router { route: GetBooks, method: Post, headers } | mbRng <- headers !! "Range" = notImplemented
   router _ = badRequest "bad request"
 
@@ -225,3 +245,6 @@ getTokatPage url = do
       StatusCode st -> do
         liftEffect $ Console.log $ "couldn't get page " <> url <> "\n\tstatus: " <> show st <> " " <> resp.statusText
         response misdirectedRequest (show st <> " " <> resp.statusText)
+
+isMimeJson :: RequestHeaders -> String -> Boolean
+isMimeJson headers hdr = (String.contains <$> Just (Pattern "application/json") <*> (headers !! hdr)) /= Just true
