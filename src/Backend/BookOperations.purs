@@ -105,7 +105,7 @@ addBook isbn props =
       let errStr = {- show -}  err
       liftEffect $ Console.log $ "Caught error: " <> show err
       if String.contains (Pattern "ENOENT: no such file or directory") errStr then do
-        liftEffect $ Console.log $ "File \"" <> csvFilePath <> "\" could not be founnd. An empty file will be created."
+        liftEffect $ Console.log $ "File \"" <> csvFilePath <> "\" could not be found. An empty file will be created."
         withNewCsvFile csvFilePath go
       else
         throwError errStr

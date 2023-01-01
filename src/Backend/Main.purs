@@ -21,7 +21,7 @@ import Effect (Effect)
 import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
-import HTTPurple (Method(..), Request, ResponseM, ServerM, as, badRequest, created', expectationFailed, fromJson, header, int, internalServerError, mkRoute, noArgs, noContent, notFound, notImplemented, ok, ok', response, rest, segment, serve, string, unsupportedMediaType, usingCont, (!!), (/), (?))
+import HTTPurple (Method(..), Request, ResponseM, ServerM, as, badRequest, conflict, created', expectationFailed, fromJson, header, int, internalServerError, mkRoute, noArgs, noContent, notFound, notImplemented, ok, ok', response, rest, segment, serve, string, unsupportedMediaType, usingCont, (!!), (/), (?))
 import HTTPurple.Headers (RequestHeaders(..), ResponseHeaders(..))
 import HTTPurple.Json.Argonaut as Argonaut
 import HTTPurple.Status (misdirectedRequest)
@@ -214,7 +214,9 @@ main = serve { port: 8080, onStarted } { route, router }
       props :: BookProps <- fromJson Argonaut.jsonDecoder body
       result <- runExceptT $ addBook isbn props
       case result of
-        Left err -> badRequest err
+        Left err
+          | Pattern "ISBN has been found in data file" `String.contains` err -> conflict err
+          | otherwise -> badRequest err
         Right _ -> created' $ header "Location" isbn
   router { route: GetBooks, method: Post, headers } | mbRng <- headers !! "Range" = notImplemented
   router _ = badRequest "bad request"
