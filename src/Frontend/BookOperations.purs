@@ -2,7 +2,6 @@ module Frontend.BookOperations where
 
 import Prelude
 
-import Affjax.Node (request)
 import Affjax.RequestBody (RequestBody(..))
 import Affjax.RequestHeader as AJRH
 import Affjax.ResponseFormat as RF
@@ -11,7 +10,7 @@ import Affjax.Web as AJ
 import Common.BookProps (BookProps)
 import Control.Monad.Except (ExceptT(..), except, throwError, withExceptT)
 import Data.Argonaut.Decode (fromJsonString, printJsonDecodeError)
-import Data.Argonaut.Encode (encodeJson, toJsonString)
+import Data.Argonaut.Encode (encodeJson)
 import Data.Either (Either(..))
 import Data.HTTP.Method as Method
 import Data.Maybe (Maybe(..))

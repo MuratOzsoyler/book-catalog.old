@@ -5,7 +5,6 @@ import Prelude
 import Common.BookProps (BookProps)
 import Control.Monad.Except (runExceptT)
 import Data.Array (foldl, notElem)
-import Data.Char.Utils (fromCodePoint)
 import Data.Either (Either(..))
 import Data.Filterable (filter)
 import Data.Foldable (any)
@@ -26,14 +25,13 @@ import Deku.Do as Deku
 import Deku.Hooks (useHot)
 import Deku.Listeners (click, textInput_)
 import Effect.Aff (joinFiber, launchAff, launchAff_, parallel, sequential)
-import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
 import Frontend.BookOperations (BookOpResult(..), getBook)
 import Frontend.BookProps (collectBookProperties)
 import Frontend.BookPropsInput (bookPropsInputScene)
 import Frontend.UI.UIUtils (disabled, errorPanel, infoPanel, sameIdAndName, value)
-import Network.RemoteData (RemoteData(..), fromEither)
+import Network.RemoteData (RemoteData(..))
 import Partial.Unsafe (unsafePartial)
 import QualifiedDo.Alt as Alt
 
@@ -59,7 +57,7 @@ bookPropsInputPage = Deku.do
   setRemoteData /\ remoteData <- useHot NotClicked
 
   D.div (klass_ "form row")
-    [ D.div (klass_ "col-3") [ D.span (klass_ "h3 fw-bold") [ text_ "KİTAP KATALOĞU" ], D.span (klass_ "fw-bold") [ text_ "0.0.2" ] ]
+    [ D.div (klass_ "col-3") [ D.span (klass_ "h3 fw-bold") [ text_ "KİTAP KATALOĞU" ], D.span (klass_ "fw-bold") [ text_ "0.0.3" ] ]
     , D.fieldset (klass_ "col-6")
         [ D.div (klass_ "input-group")
             [ D.input
