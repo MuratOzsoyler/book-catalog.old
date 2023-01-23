@@ -19,22 +19,22 @@ import Data.String (joinWith, null, trim) as String
 import Data.String.Utils (lines) as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
-import Debug (spy, spyWith, trace)
+import Debug (spyWith, trace)
 import Deku.Attribute (cb, (!:=))
 import Deku.Attributes (id_, klass, klass_)
 import Deku.Control (blank, text, text_, (<#~>))
 import Deku.Core (Domable, dyn, fixed)
 import Deku.DOM as D
 import Deku.Do as Deku
-import Deku.Hooks (useDyn_, useHot, useHot', useState)
+import Deku.Hooks (useDyn_, useHot, useHot')
 import Deku.Lifecycle (onDidMount, onWillMount)
-import Deku.Listeners (checkbox, checkbox_, click, click', click_, textInput, textInput_)
+import Deku.Listeners (checkbox, checkbox_, click, click_, textInput, textInput_)
 import Effect (Effect)
 import Effect.Aff (joinFiber, launchAff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
 import FRP.Event (Event, fold, mapAccum, withLast)
-import FRP.Event.Class ((<*|>), (<|**>), (<|*>))
+import FRP.Event.Class ((<|**>))
 import FRP.Event.Time (interval)
 import Frontend.BookOperations (BookOpResult(..), addBook, deleteBook, updateBook)
 import Frontend.UI.UIUtils (checked, disabled, infoPanel, onBlur, onDblclick, turkCharsToEng, value, withInputElementValue)

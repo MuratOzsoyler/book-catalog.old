@@ -18,11 +18,10 @@ import Data.Profunctor (dimap)
 import Data.String (Pattern(..), joinWith, split)
 import Data.String as String
 import Effect (Effect)
-import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
 import HTTPurple (Method(..), Request, ResponseM, ServerM, as, badRequest, conflict, created', expectationFailed, fromJson, header, int, internalServerError, mkRoute, noArgs, noContent, notFound, notImplemented, ok, ok', response, rest, segment, serve, string, unsupportedMediaType, usingCont, (!!), (/), (?))
-import HTTPurple.Headers (RequestHeaders(..), ResponseHeaders(..))
+import HTTPurple.Headers (RequestHeaders, ResponseHeaders)
 import HTTPurple.Json.Argonaut as Argonaut
 import HTTPurple.Status (misdirectedRequest)
 import Node.FS.Aff (readFile)
@@ -32,7 +31,6 @@ import Node.URL (Query, format, parse, toQueryString)
 import Partial.Unsafe (unsafeCrashWith)
 import Routing.Duplex (RouteDuplex')
 import Unsafe.Coerce (unsafeCoerce)
-import Web.HTML.Event.EventTypes (offline)
 
 data Route
   = Home
