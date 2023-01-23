@@ -5,7 +5,6 @@ import Prelude
 import Common.BookProps (BookProps)
 import Control.Monad.Except (runExceptT)
 import Data.Array (foldl, notElem)
-import Data.Char.Utils (fromCodePoint)
 import Data.Either (Either(..))
 import Data.Filterable (filter)
 import Data.Foldable (any)
@@ -26,14 +25,13 @@ import Deku.Do as Deku
 import Deku.Hooks (useHot)
 import Deku.Listeners (click, textInput_)
 import Effect.Aff (joinFiber, launchAff, launchAff_, parallel, sequential)
-import Effect.Aff.Class (liftAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
 import Frontend.BookOperations (BookOpResult(..), getBook)
 import Frontend.BookProps (collectBookProperties)
 import Frontend.BookPropsInput (bookPropsInputScene)
 import Frontend.UI.UIUtils (disabled, errorPanel, infoPanel, sameIdAndName, value)
-import Network.RemoteData (RemoteData(..), fromEither)
+import Network.RemoteData (RemoteData(..))
 import Partial.Unsafe (unsafePartial)
 import QualifiedDo.Alt as Alt
 

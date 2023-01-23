@@ -4,10 +4,10 @@ import Prelude
 
 import Common.BookProps (BookProps, bookToProps, propsToBook)
 import Control.Monad.Error.Class (try)
-import Control.Monad.Except (ExceptT(..), catchError, except, lift, throwError, withExceptT)
+import Control.Monad.Except (ExceptT(..), catchError, throwError, withExceptT)
 import Data.Array as Array
 import Data.Either (Either(..))
-import Data.List (List, (!!), (:))
+import Data.List (List, (!!))
 import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
@@ -18,9 +18,8 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
-import Node.Buffer as Buffer
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff (readFile, readTextFile, writeFile, writeTextFile)
+import Node.FS.Aff (readTextFile, writeTextFile)
 import Node.Path (FilePath)
 import Parsing (parseErrorMessage, runParser)
 import Parsing.CSV (makeParsers)

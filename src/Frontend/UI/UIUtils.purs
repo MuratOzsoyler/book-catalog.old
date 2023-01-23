@@ -4,17 +4,15 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Control.Monad.Except (ExceptT(..))
-import Control.Plus (class Plus, empty)
 import Data.Array as Array
 import Data.Either (Either(..), note)
 import Data.Foldable (for_)
 import Data.Foldable as Foldable
-import Data.Maybe (Maybe(..), fromJust, isJust)
+import Data.Maybe (fromJust, isJust)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Debug (spy, spyWith, trace)
-import Deku.Attribute (class Attr, Attribute, cb, maybeAttr, (!:=), (:=))
+import Deku.Attribute (class Attr, Attribute, cb, (!:=), (:=))
 import Deku.Control (text_)
 import Deku.Core (Domable)
 import Deku.DOM as D
@@ -28,7 +26,6 @@ import Web.DOM.Element as Element
 import Web.DOM.NodeList as NodeList
 import Web.DOM.ParentNode (QuerySelector(..), querySelectorAll)
 import Web.Event.Event as WebEvent
-import Web.HTML.Event.EventTypes (offline)
 import Web.HTML.HTMLInputElement (HTMLInputElement)
 import Web.HTML.HTMLInputElement as HTMLInputElement
 
@@ -71,9 +68,7 @@ disabled ∷ forall e. Attr e D.Disabled String => Event Boolean -> Event (Attri
 disabled = attrToFuncEShow D.Disabled -- show 
 
 readonly ∷ forall e. Attr e D.Readonly String => Event Boolean -> Event (Attribute e)
-readonly = map ((if _ then D.Readonly := spy "readonly" "true" else D.Readonly := spy "readonly" unit) <<< spy "readonly/input")
-
--- disabled = map ((D.Disabled := _) <<< show)
+readonly = map (if _ then D.Readonly := "true" else D.Readonly := unit)
 
 checked ∷ forall e. Attr e D.Checked String => Event Boolean -> Event (Attribute e)
 checked = attrToFuncEShow D.Checked

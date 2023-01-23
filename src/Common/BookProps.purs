@@ -2,7 +2,6 @@ module Common.BookProps where
 
 import Prelude
 
-import Data.Foldable (foldl)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.String (Pattern(..), joinWith)
