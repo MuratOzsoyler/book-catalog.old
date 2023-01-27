@@ -183,12 +183,12 @@ bookPropsInputScene props mbBookProps isbn = Deku.do
                     klass $ disable <#> (if _ then " disabled" else "") >>> ("row" <> _)
                     disabled disable
                   [ D.div (klass_ "row")
-                      [ D.h3 (klass_ "text-center offset-2 col-8") [ text_ isbn ]
+                      [ D.h3 (klass_ "text-center offset-sm-2 col-sm-8") [ text_ isbn ]
                       , Deku.do
                           operation <#~> case _ of
                             Add -> D.button
                               Alt.do
-                                klass_ "btn btn-primary col-1"
+                                klass_ "btn btn-primary col-sm-1"
                                 disabled $ pure true <|> propsInvalid result
                                 click $ result <#> \res -> cb \_ -> do
                                   setOperationStatus Operating
@@ -204,7 +204,7 @@ bookPropsInputScene props mbBookProps isbn = Deku.do
                             Terminate -> blank -- oprIndicator "Ekleniyor" "primary"
                             _ {- | opr == Update || opr == Delete -} -> D.div
                               Alt.do
-                                klass $ disable <#> \d -> "btn-group col-2" <> if d then " disabled" else ""
+                                klass $ disable <#> \d -> "btn-group col-sm-2" <> if d then " disabled" else ""
                                 D.Role !:= "group"
                               -- D.AriaLabel !:= "Action buttons"
                               [ D.button
@@ -277,7 +277,7 @@ bookPropsInputScene props mbBookProps isbn = Deku.do
       engPropName = turkCharsToEng name
       cls = fold (\_ s -> "form-control" <> if String.null s then " is-invalid" else "") "form-control" local
       setBoth v = setLocal v *> setResult (name /\ [ v ])
-    D.fieldset (klass_ "col-6") -- (klass $ result <#> String.null >>> (if _ then " text-danger" else "") >>> ("col-6" <> _))
+    D.fieldset (klass_ "col-sm-6") -- (klass $ result <#> String.null >>> (if _ then " text-danger" else "") >>> ("col-6" <> _))
       [ D.legend_ [ text_ name ]
       , D.input
           Alt.do
@@ -332,7 +332,7 @@ bookPropsInputScene props mbBookProps isbn = Deku.do
             # Array.nub
             # Array.sort
             # merge2 valsUnique
-    D.fieldset (klass_ "col-6 row")
+    D.fieldset (klass_ "col-sm-6 row")
       [ D.legend_ [ text_ name ]
       , case optsUnique of
           [] -> infoTokat name

@@ -57,8 +57,8 @@ bookPropsInputPage = Deku.do
   setRemoteData /\ remoteData <- useHot NotClicked
 
   D.div (klass_ "form row")
-    [ D.div (klass_ "col-3") [ D.span (klass_ "h3 fw-bold") [ text_ "KİTAP KATALOĞU" ], D.span (klass_ "fw-bold") [ text_ "0.0.3" ] ]
-    , D.fieldset (klass_ "col-6")
+    [ D.div (klass_ "col-sm-3") [ D.span (klass_ "h3 fw-bold") [ text_ "KİTAP KATALOĞU" ], D.span (klass_ "fw-bold") [ text_ "0.0.4" ] ]
+    , D.fieldset (klass_ "col-sm-6")
         [ D.div (klass_ "input-group")
             [ D.input
                 Alt.do
