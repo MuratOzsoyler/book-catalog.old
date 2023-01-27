@@ -19,7 +19,6 @@ import Data.String (joinWith, null, trim) as String
 import Data.String.Utils (lines) as String
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
-import Debug (spyWith, trace)
 import Deku.Attribute (cb, (!:=))
 import Deku.Attributes (id_, klass, klass_)
 import Deku.Control (blank, text, text_, (<#~>))
@@ -89,8 +88,8 @@ bookPropsInputScene props mbBookProps isbn = Deku.do
     result = fold
       (\ps (key /\ val) -> Map.alter (const $ if Array.null val then Nothing else Just val) key ps)
       ( case mbBookProps of
-          Nothing -> trace "empty result" \_ -> Map.empty
-          Just ps -> spyWith "full book" show ps
+          Nothing -> Map.empty
+          Just ps -> ps
       )
       propResult
     disable = operationStatus <#> case _ of
@@ -239,11 +238,11 @@ bookPropsInputScene props mbBookProps isbn = Deku.do
                                   [ text_ "Sil" ]
                               ]
                       ]
-                  , ((result <|**> (operation $> spyWith "opr" show <<< Just)) <|> pure (spyWith "mbBookProps" show mbBookProps))
+                  , ((result <|**> (operation $> Just)) <|> pure mbBookProps)
                       <#~> \mbBP -> fixed
                         [ fixed $ radioKeys <#> \name -> radioPropInput name setPropResult
                             (Map.lookup name props)
-                            (Array.head =<< Map.lookup name =<< spyWith "mbBP" show mbBP)
+                            (Array.head =<< Map.lookup name =<< mbBP)
                         , fixed $ checkboxKeys <#> \name -> checkboxPropInput name setPropResult
                             (Map.lookup name props)
                             (Map.lookup name =<< mbBP)
