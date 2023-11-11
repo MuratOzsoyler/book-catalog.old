@@ -1,5 +1,5 @@
 { sources = [ "./src/**/*.purs" ]
-, name = "deku-starter"
+, name = "book-catalog.old"
 , dependencies =
   [ "aff"
   , "affjax"
